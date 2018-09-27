@@ -66,7 +66,7 @@ while True:
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
 
-    cv2.imshow("mask", mask)
+    # cv2.imshow("mask", mask)
     # find contours in the mask and initialize the current
     # (x, y) center of the ball
     cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
@@ -84,9 +84,10 @@ while True:
     cv2.circle(frame, (centerX, centerY), 5, (0, 0, 255), -1)
 
     # bilateraly filter the raw frame
-    bilateral_filtered_image = cv2.bilateralFilter(frame, 5, 175, 175)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    bilateral_filtered_image = cv2.bilateralFilter(gray, 5, 175, 175)
     # perform canny edge filter on filtered frame
-    edges = cv2.Canny(bilateral_filtered_image, 100, 200)
+    edges = cv2.Canny(bilateral_filtered_image, 25, 50)
 
     # find contours in edges
     _, contours, _ = cv2.findContours(edges, cv2.RETR_TREE,
@@ -95,51 +96,53 @@ while True:
     for contour in contours:
         approx = cv2.approxPolyDP(contour, 0.01*cv2.arcLength(contour, True),
                                   True)
-    area = cv2.contourArea(contour)
-    if ((len(approx) > 8) & (area > 30)):
-        contour_list.append(contour)
-        drawContour = cv2.drawContours(edges, contour_list,  -1, (255, 0, 0),
-                                       2)
-        cv2.imshow('Objects Detected', drawContour)
+        area = cv2.contourArea(contour)
+        if ((len(approx) > 8) & (area > 30)):
+            contour_list.append(contour)
+            drawContour = cv2.drawContours(edges, contour_list,  -1, (255, 0,
+                                                                      0), 2)
+            # cv2.imshow('Objects Detected', drawContour)
 
     # process all the contours in cnts
     for c in cnts:
 
         ((x, y), radius) = cv2.minEnclosingCircle(c)
-    M = cv2.moments(c)
-    center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
-    # find the maximum contour (really i want to find the largest distance)
-    maxC = max(cnts, key=cv2.contourArea)
-    M2 = cv2.moments(maxC)
-    maxCenter = (int(M2["m10"] / M2["m00"]), int(M2["m01"] / M2["m00"]))
-    focal = (48*12)/2.6
-    # only proceed if the radius meets a minimum size
-    if radius > 20:
-        # draw the circle and centroid on the frame,
-        # then update the list of tracked points
-        cv2.circle(frame, (int(x), int(y)), int(radius),
-                   (0, 255, 255), 2)
-        cv2.circle(frame, center, 5, (0, 0, 255), -1)
-        print(radius)
-        # calculate distance to camera using known object dimensions
-        distanceCamera = (2.6*focal)/radius
-        distText = str(distanceCamera)
-        distText2 = "distText inches"
-        cv2.putText(frame, str(round(distanceCamera, 1)), (20, 150), font, 1,
-                    (255, 255, 255), 1)
-        # Draw a line between the center of frame and detected object
-        lineThickness = 1
-        cv2.line(frame, (centerX, centerY), (center), (0, 255, 0),
-                 lineThickness)
-        # print('This is the value of center ',center)
-        (localX, localY) = maxCenter
-        distCenter = int(round(((localX-centerX)**2+(localY-centerY)**2)**.5))
+        M = cv2.moments(c)
+        center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+        # find the maximum contour (really need to find the largest distance)
+        maxC = max(cnts, key=cv2.contourArea)
+        M2 = cv2.moments(maxC)
+        maxCenter = (int(M2["m10"] / M2["m00"]), int(M2["m01"] / M2["m00"]))
+        focal = (48*12)/2.6
+        # only proceed if the radius meets a minimum size
+        if radius > 20:
+            # draw the circle and centroid on the frame,
+            # then update the list of tracked points
+            cv2.circle(frame, (int(x), int(y)), int(radius),
+                              (0, 255, 255), 2)
+            cv2.circle(frame, center, 5, (0, 0, 255), -1)
+            print(radius)
+            # calculate distance to camera using known object dimensions
+            distanceCamera = (2.6*focal)/radius
+            distText = str(distanceCamera)
+            distText2 = "distText inches"
+            cv2.putText(frame, str(round(distanceCamera, 1)), (20, 150), font,
+                        1, (255, 255, 255), 1)
+            # Draw a line between the center of frame and detected object
+            lineThickness = 1
+            cv2.line(frame, (centerX, centerY), (center), (0, 255, 0),
+                     lineThickness)
+            # print('This is the value of center ',center)
+            (localX, localY) = maxCenter
+            distCenter = int(round(((localX-centerX)**2+(localY-centerY)**2)
+                                   ** .5))
         # print('this is the Distance from center:',distCenter)
         # write the Distance to Center on image
 
-    cv2.putText(frame, str(distCenter), (20, 100), font, 1, (255, 255, 255), 1)
+            cv2.putText(frame, str(distCenter), (20, 100), font, 1, (255, 255,
+                                                                     255), 1)
 
-    cv2.GaussianBlur(frame, (11, 11), 0)
+            cv2.GaussianBlur(frame, (11, 11), 0)
 
     # # update the points queue
     # pts.appendleft(center)
