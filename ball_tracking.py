@@ -87,7 +87,7 @@ while True:
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     bilateral_filtered_image = cv2.bilateralFilter(gray, 5, 175, 175)
     # perform canny edge filter on filtered frame
-    edges = cv2.Canny(bilateral_filtered_image, 25, 50)
+    edges = cv2.Canny(bilateral_filtered_image, 25, 200)
 
     # find contours in edges
     _, contours, _ = cv2.findContours(edges, cv2.RETR_TREE,
@@ -101,7 +101,7 @@ while True:
             contour_list.append(contour)
             drawContour = cv2.drawContours(edges, contour_list,  -1, (255, 0,
                                                                       0), 2)
-            # cv2.imshow('Objects Detected', drawContour)
+            cv2.imshow('Objects Detected', drawContour)
 
     # process all the contours in cnts
     for c in cnts:
